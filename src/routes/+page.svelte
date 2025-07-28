@@ -72,16 +72,11 @@
 
 		const outputs = { ...defaultOutputs };
 
-		if (inputs.bow && inputs.cargo && inputs.passWt)
-			outputs.zfw = inputs.bow + inputs.cargo + inputs.passWt;
-		else outputs.zfw = undefined;
+		outputs.zfw = (inputs.bow ?? 0) + (inputs.cargo ?? 0) + (inputs.passWt ?? 0);
 
-		if (inputs.fuelOnBoard && outputs.zfw) outputs.grossWeight = inputs.fuelOnBoard + outputs.zfw;
-		else outputs.grossWeight = undefined;
+		outputs.grossWeight = (inputs.fuelOnBoard ?? 0) + (outputs.zfw ?? 0);
 
-		if (outputs.grossWeight && inputs.plannedTaxi)
-			outputs.takeoffWeight = outputs.grossWeight - inputs.plannedTaxi;
-		else outputs.takeoffWeight = undefined;
+		outputs.takeoffWeight = (outputs.grossWeight ?? 0) - (inputs.plannedTaxi ?? 0);
 
 		if (
 			conditions.temperature &&
@@ -428,7 +423,7 @@
 			<span>8. # Pass </span>
 			<ButtonGroup class="w-full">
 				<Input type="number" bind:value={inputs.numPass} />
-				<InputAddon>lbs</InputAddon>
+				<InputAddon>#</InputAddon>
 			</ButtonGroup>
 		</Label>
 		<div class="flex-1/2"></div>
