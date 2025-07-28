@@ -1,5 +1,5 @@
 {
-	"name": "flowbite-svelte-starter",
+	"name": "t54-told",
 	"version": "0.1.3",
 	"description": "Flowbite-Svelte starter kit",
 	"author": {
@@ -7,8 +7,8 @@
 		"email": "connect@codewithshin.com",
 		"url": "https://blog.codewithshin.com"
 	},
-	"bugs": "https://github.com/shinokada/flowbite-svelte-starter/issues",
-	"homepage": "https://github.com/shinokada/flowbite-svelte-starter",
+	"bugs": "https://github.com/shinokada/t54-told/issues",
+	"homepage": "https://github.com/shinokada/t54-told",
 	"license": "MIT",
 	"type": "module",
 	"keywords": [
