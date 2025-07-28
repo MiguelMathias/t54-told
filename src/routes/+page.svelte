@@ -518,7 +518,11 @@
 	</P>
 	<P class="text-center">
 		Developed by Miguel Mathias. Source code available on{' '}
-		<a href="https://github.com" class="text-blue-500 hover:underline" target="_blank">GitHub</a>.
+		<a
+			href="https://github.com/MiguelMathias/t54-told"
+			class="text-blue-500 hover:underline"
+			target="_blank">GitHub</a
+		>.
 	</P>
 	<div class="w-full text-end">
 		<Button class="text-end" color="primary" onclick={() => (infoOpen = false)}>Close</Button>
