@@ -54,20 +54,20 @@ export const findAirportByICAO = (icao: string): Airport | undefined =>
 export const findRunwaysByICAO = (icao: string): Runway[] =>
 	(runways as Runway[]).filter((runway) => runway.airport_ident === icao.toUpperCase());
 
-interface BestRunwayChoice {
+export type BestRunway = {
 	ident: string;
 	heading: number;
 	headwind: number;
 	crosswind: number;
 	length: number;
-}
+};
 
 export const findBestRunwayForTakeoff = (
 	runways: Runway[],
 	windDirectionTrue: number,
 	windSpeed: number
-): BestRunwayChoice | null => {
-	let bestRunway: BestRunwayChoice | null = null;
+): BestRunway | null => {
+	let bestRunway: BestRunway | null = null;
 
 	for (const runway of runways) {
 		const ends = [
@@ -137,7 +137,7 @@ export type Conditions = {
 	temperature?: number;
 	elevation?: number;
 	slope?: number;
-	runway?: BestRunwayChoice;
+	runway?: BestRunway;
 	hwTw?: number;
 	xw?: number;
 	pressureAlt?: number;
@@ -157,6 +157,7 @@ export type Settings = {
 	takeoffFlaps: 'Up' | 'Approach';
 	landingReverse: boolean;
 	landingObstacle?: number;
+	useRealWeightForLanding: boolean;
 	landingFlaps: 'Up' | 'Approach' | 'Down';
 	usePressureAlt: boolean;
 };
@@ -167,6 +168,7 @@ export const defaultSettings: Settings = {
 	takeoffFlaps: 'Up',
 	landingReverse: false,
 	landingObstacle: 50,
+	useRealWeightForLanding: false,
 	landingFlaps: 'Approach',
 	usePressureAlt: false
 };

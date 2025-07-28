@@ -1,3 +1,5 @@
+import type { Settings } from './types';
+
 type Point2d = {
 	x: number;
 	y: number;
@@ -372,7 +374,7 @@ const computer = (pointsSet: Point3d[][], ...inputs: number[]) => {
 		}
 		return prevRes;
 	} catch (error) {
-		console.error(error);
+		//console.error(error);
 	}
 };
 
@@ -2650,3 +2652,89 @@ export const climbOneEngineInop = (oat: number, pa: number, weight: number) => {
 };
 
 //console.log(computeWindComponents(132, 312, 20))
+export const getAccelStopComputer = (settings: Settings) => {
+	switch (settings.takeoffFlaps) {
+		case 'Up':
+			return settings.wetRunway ? accelStopFlapsUpWet : accelStopFlapsUpDry;
+		case 'Approach':
+			return settings.wetRunway ? accelStopFlapsApproachWet : accelStopFlapsApproachDry;
+	}
+};
+
+export const getAccelGoComputer = (settings: Settings, pa: number) => {
+	switch (settings.takeoffFlaps) {
+		case 'Up':
+			return pa > 10000 ? accelGoFlapsUpGreaterThan10KPA : accelGoFlapsUpLessThan10KPA;
+		case 'Approach':
+			return pa > 10000 ? accelGoFlapsApproachGreaterThan10KPA : accelGoFlapsApproachLessThan10KPA;
+	}
+};
+
+export const getLandingComputer = (settings: Settings) => {
+	switch (settings.landingReverse) {
+		case false:
+			switch (settings.landingFlaps) {
+				case 'Up':
+					return (
+						oat: number,
+						pa: number,
+						weight: number,
+						slope: number,
+						wind: number,
+						obstacleHeight: number
+					) => {
+						const dist =
+							(settings.wetRunway
+								? landingDistanceNoRevFlapsDownWet(oat, pa, weight, slope, wind, obstacleHeight)
+								: landingDistanceNoRevFlapsDownDry(oat, pa, weight, slope, wind, obstacleHeight)) ??
+							undefined;
+						return dist
+							? settings.wetRunway
+								? landingDistanceNoRevFlapsUpWet(dist)
+								: landingDistanceNoRevFlapsUpDry(dist)
+							: undefined;
+					};
+				case 'Approach':
+					return settings.wetRunway ? () => undefined : landingDistanceNoRevFlapsApproachDry;
+				case 'Down':
+					return settings.wetRunway
+						? landingDistanceNoRevFlapsDownWet
+						: landingDistanceNoRevFlapsDownDry;
+			}
+		case true:
+			switch (settings.landingFlaps) {
+				case 'Up':
+					return (
+						oat: number,
+						pa: number,
+						weight: number,
+						slope: number,
+						wind: number,
+						obstacleHeight: number
+					) => {
+						const dist =
+							(settings.wetRunway
+								? landingDistanceWithRevFlapsDownWet(oat, pa, weight, slope, wind, obstacleHeight)
+								: landingDistanceWithRevFlapsDownDry(
+										oat,
+										pa,
+										weight,
+										slope,
+										wind,
+										obstacleHeight
+									)) ?? undefined;
+						return dist
+							? settings.wetRunway
+								? landingDistanceWithRevFlapsUpWet(dist)
+								: landingDistanceWithRevFlapsUpDry(dist)
+							: undefined;
+					};
+				case 'Approach':
+					return settings.wetRunway ? () => undefined : landingDistanceWithRevFlapsApproachDry;
+				case 'Down':
+					return settings.wetRunway
+						? landingDistanceWithRevFlapsDownWet
+						: landingDistanceWithRevFlapsDownDry;
+			}
+	}
+};
