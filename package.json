@@ -73,5 +73,8 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"dependencies": {
+		"@sveltejs/adapter-vercel": "^5.8.1"
 	}
 }
