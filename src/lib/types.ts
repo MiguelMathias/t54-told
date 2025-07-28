@@ -1,3 +1,5 @@
+import airports from '$lib/airports.json';
+import runways from '$lib/runways.json';
 import { computeWindComponents } from './computer';
 
 export type Airport = {
@@ -46,10 +48,17 @@ export interface Runway {
 	width_ft: number;
 }
 
+export const findAirportByICAO = (icao: string): Airport | undefined =>
+	(airports as Airport[]).find((airport) => airport.ident === icao.toUpperCase());
+
+export const findRunwaysByICAO = (icao: string): Runway[] =>
+	(runways as Runway[]).filter((runway) => runway.airport_ident === icao.toUpperCase());
+
 interface BestRunwayChoice {
-	id: string;
+	ident: string;
 	heading: number;
 	headwind: number;
+	crosswind: number;
 	length: number;
 }
 
@@ -62,19 +71,24 @@ export const findBestRunwayForTakeoff = (
 
 	for (const runway of runways) {
 		const ends = [
-			{ id: runway.le_ident, heading: runway.le_heading_degT },
-			{ id: runway.he_ident, heading: runway.he_heading_degT }
+			{ ident: runway.le_ident, heading: runway.le_heading_degT },
+			{ ident: runway.he_ident, heading: runway.he_heading_degT }
 		];
 
 		for (const end of ends) {
-			if (end.id && end.heading !== undefined) {
-				const { headwind } = computeWindComponents(end.heading, windDirectionTrue, windSpeed);
+			if (end.ident && end.heading !== undefined) {
+				const { headwind, crosswind } = computeWindComponents(
+					end.heading,
+					windDirectionTrue,
+					windSpeed
+				);
 
 				if (!bestRunway || headwind > bestRunway.headwind) {
 					bestRunway = {
-						id: end.id,
+						ident: end.ident,
 						heading: end.heading,
 						headwind,
+						crosswind,
 						length: runway.length_ft
 					};
 				}
@@ -86,20 +100,17 @@ export const findBestRunwayForTakeoff = (
 };
 
 export type Inputs = {
-	bow: number | undefined;
-	fuelOnBoard: number | undefined;
-	cargo: number | undefined;
-	plannedTaxi: number | undefined;
-	passWt: number | undefined;
-	plannedReserve: number | undefined;
-	avgPassWt: number | undefined;
-	numPass: number | undefined;
+	bow?: number;
+	fuelOnBoard?: number;
+	cargo?: number;
+	plannedTaxi?: number;
+	passWt?: number;
+	plannedReserve?: number;
+	avgPassWt?: number;
+	numPass?: number;
 };
 
 export const defaultInputs: Inputs = {
-	bow: undefined,
-	fuelOnBoard: undefined,
-	cargo: undefined,
 	plannedTaxi: 90,
 	passWt: 200,
 	plannedReserve: 600,
@@ -108,47 +119,36 @@ export const defaultInputs: Inputs = {
 };
 
 export type Outputs = {
-	accelerateStop: number | undefined;
-	accelerateGo: number | undefined;
-	v1: number | undefined;
-	vr: number | undefined;
-	v1VrRatio: number | undefined;
-	oneEngineInopClimbRate: number | undefined;
-	landingDistance: number | undefined;
-	zfw: number | undefined;
-	takeoffWeight: number | undefined;
-	grossWeight: number | undefined;
+	accelerateStop?: number;
+	accelerateGo?: number;
+	v1?: number;
+	vr?: number;
+	v1VrRatio?: number;
+	oneEngineInopClimbRate?: number;
+	landingDistance?: number;
+	zfw?: number;
+	takeoffWeight?: number;
+	grossWeight?: number;
 };
 
-export const defaultOutputs: Outputs = {
-	accelerateStop: undefined,
-	accelerateGo: undefined,
-	v1: undefined,
-	vr: undefined,
-	v1VrRatio: undefined,
-	oneEngineInopClimbRate: undefined,
-	landingDistance: undefined,
-	zfw: undefined,
-	takeoffWeight: undefined,
-	grossWeight: undefined
-};
+export const defaultOutputs: Outputs = {};
 
 export type Conditions = {
-	temperature: number | undefined;
-	elevation: number | undefined;
-	slope: number | undefined;
-	runway: BestRunwayChoice | undefined;
-	hwTw: number | undefined;
-	pressureAlt: number | undefined;
+	temperature?: number;
+	elevation?: number;
+	slope?: number;
+	runway?: BestRunwayChoice;
+	hwTw?: number;
+	xw?: number;
+	pressureAlt?: number;
+	windDirection?: number;
+	windSpeed?: number;
+	altimeter?: number;
+	rawMetar?: string;
 };
 
 export const defaultConditions: Conditions = {
-	temperature: undefined,
-	elevation: undefined,
-	slope: 0,
-	runway: undefined,
-	hwTw: undefined,
-	pressureAlt: undefined
+	slope: 0
 };
 
 export type Settings = {
@@ -156,7 +156,7 @@ export type Settings = {
 	wetRunway: boolean;
 	takeoffFlaps: 'Up' | 'Approach';
 	landingReverse: boolean;
-	landingObstacle: number | undefined;
+	landingObstacle?: number;
 	landingFlaps: 'Up' | 'Approach' | 'Down';
 	usePressureAlt: boolean;
 };

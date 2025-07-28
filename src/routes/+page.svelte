@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import airports from '$lib/airports.json';
 	import {
 		accelGoFlapsApproachGreaterThan10KPA,
 		accelGoFlapsApproachLessThan10KPA,
@@ -11,6 +10,7 @@
 		accelStopFlapsUpDry,
 		accelStopFlapsUpWet,
 		climbOneEngineInop,
+		computeWindComponents,
 		landingDistanceNoRevFlapsApproachDry,
 		landingDistanceNoRevFlapsDownDry,
 		landingDistanceNoRevFlapsDownWet,
@@ -22,13 +22,14 @@
 		landingDistanceWithRevFlapsUpDry,
 		landingDistanceWithRevFlapsUpWet
 	} from '$lib/computer';
-	import runways from '$lib/runways.json';
 	import {
 		defaultConditions,
 		defaultInputs,
 		defaultOutputs,
 		defaultSettings,
+		findAirportByICAO,
 		findBestRunwayForTakeoff,
+		findRunwaysByICAO,
 		type Airport,
 		type Runway,
 		type Settings
@@ -264,53 +265,68 @@
 	let infoOpen = $state(false);
 
 	let icao = $state('NGP');
-	let metar = $state('');
 
-	const findAirportByICAO = (icao: string): Airport | undefined =>
-		(airports as Airport[]).find((airport) => airport.ident === icao.toUpperCase());
-
-	const findRunwaysByICAO = (icao: string): Runway[] =>
-		(runways as Runway[]).filter((runway) => runway.airport_ident === icao.toUpperCase());
-
-	const fetchMetar = async () => {
+	let airport: Airport | undefined = $derived.by(() => {
 		if (icao.startsWith('K') && icao.length === 4) icao = icao.slice(1);
+		return findAirportByICAO(`K${icao}`);
+	});
+	let runways: Runway[] = $derived.by(() => {
+		if (icao.startsWith('K') && icao.length === 4) icao = icao.slice(1);
+		return findRunwaysByICAO(`K${icao}`);
+	});
 
-		const airport = findAirportByICAO(`K${icao}`);
-		const runways = findRunwaysByICAO(`K${icao}`);
+	const updateConditions = async () => {
+		try {
+			//if (icao.startsWith('K') && icao.length === 4) icao = icao.slice(1);
+			if (icao.length !== 3) return;
 
-		const response = await fetch(
-			`https://api.allorigins.win/get?url=${encodeURIComponent(
-				`https://www.aviationweather.gov/cgi-bin/data/metar.php?ids=K${icao}`
-			)}`
-		);
-		const data = await response.json();
+			const airport = findAirportByICAO(`K${icao}`);
+			const runways = findRunwaysByICAO(`K${icao}`);
 
-		metar = data.contents.trim();
+			const response = await fetch(
+				`https://api.allorigins.win/get?url=${encodeURIComponent(
+					`https://www.aviationweather.gov/cgi-bin/data/metar.php?ids=K${icao}`
+				)}`
+			);
+			const data = await response.json();
 
-		const windMatch = metar.match(/(\d{3})(\d{2,3})(G\d{2,3})?KT/);
-		const tempMatch = metar.match(/M?(\d{2})\/M?(\d{2})/);
-		const altimeterMatch = metar.match(/A(\d{4})/);
+			conditions.rawMetar = data.contents.trim();
 
-		const windDirection = windMatch ? parseInt(windMatch[1]) : 0;
-		const windSpeed = windMatch ? parseInt(windMatch[2]) : 0;
-		const temp = tempMatch
-			? tempMatch[1].startsWith('M')
-				? -parseInt(tempMatch[1].slice(1))
-				: parseInt(tempMatch[1])
-			: undefined;
-		const altimeter = altimeterMatch ? parseInt(altimeterMatch[1]) / 100 : undefined;
+			const windMatch = conditions.rawMetar?.match(/(\d{3})(\d{2,3})(G\d{2,3})?KT/);
+			const tempMatch = conditions.rawMetar?.match(/M?(\d{2})\/M?(\d{2})/);
+			const altimeterMatch = conditions.rawMetar?.match(/A(\d{4})/);
 
-		conditions.temperature = temp;
-		conditions.elevation = airport?.elevation_ft;
-		const bestRunway = findBestRunwayForTakeoff(runways, windDirection, windSpeed);
-		conditions.runway = bestRunway ?? undefined;
-		conditions.hwTw = bestRunway?.headwind || undefined;
-
-		conditions.pressureAlt =
-			airport?.elevation_ft && altimeter
-				? (29.92 - altimeter) * 1000 + airport.elevation_ft
+			conditions.windDirection = windMatch ? parseInt(windMatch[1]) : 0;
+			conditions.windSpeed = windMatch ? parseInt(windMatch[2]) : 0;
+			conditions.temperature = tempMatch
+				? tempMatch[1].startsWith('M')
+					? -parseInt(tempMatch[1].slice(1))
+					: parseInt(tempMatch[1])
 				: undefined;
+			conditions.altimeter = altimeterMatch ? parseInt(altimeterMatch[1]) / 100 : undefined;
+
+			conditions.elevation = airport?.elevation_ft;
+			const bestRunway = findBestRunwayForTakeoff(
+				runways,
+				conditions.windDirection,
+				conditions.windSpeed
+			);
+			conditions.runway = bestRunway ?? undefined;
+			conditions.hwTw = bestRunway?.headwind || undefined;
+			conditions.xw = bestRunway?.crosswind || undefined;
+
+			conditions.pressureAlt =
+				airport?.elevation_ft && conditions.altimeter
+					? (29.92 - conditions.altimeter) * 1000 + airport.elevation_ft
+					: undefined;
+		} catch (error) {
+			console.error(error);
+		}
 	};
+	$effect(() => {
+		icao;
+		updateConditions();
+	});
 </script>
 
 <div class="space-y-6 p-8">
@@ -338,8 +354,13 @@
 		<div>
 			<ButtonGroup>
 				<InputAddon>K</InputAddon>
-				<Input placeholder="Enter ICAO" class="max-w-64" bind:value={icao} />
-				<Button color="primary" size="sm" onclick={fetchMetar}>METAR</Button>
+				<Input
+					placeholder="Enter ICAO"
+					class="max-w-64"
+					bind:value={icao}
+					onkeypress={(e) => (e.key === 'Enter' ? updateConditions() : undefined)}
+				/>
+				<Button color="primary" size="sm" onclick={updateConditions}>METAR</Button>
 			</ButtonGroup>
 		</div>
 	</div>
@@ -347,126 +368,262 @@
 	<div class="flex w-full flex-row gap-4">
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>1. BOW</span>
-			<Input type="number" bind:value={inputs.bow} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.bow} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>2. Fuel on Board</span>
-			<Input type="number" bind:value={inputs.fuelOnBoard} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.fuelOnBoard} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 	</div>
 	<div class="flex w-full flex-row gap-4">
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>3. Cargo</span>
-			<Input type="number" bind:value={inputs.cargo} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.cargo} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>4. Planned Taxi</span>
-			<Input type="number" placeholder="90" bind:value={inputs.plannedTaxi} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.plannedTaxi} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 	</div>
 	<div class="flex w-full flex-row gap-4">
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>5. Pass Wt (8 x 7)</span>
-			<Input type="number" bind:value={inputs.passWt} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.passWt} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>6. Planned Reserve</span>
-			<Input type="number" placeholder="600" bind:value={inputs.plannedReserve} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.plannedReserve} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 	</div>
 	<div class="flex w-full flex-row gap-4">
 		<Label class="flex flex-1/2 flex-col gap-2">
 			<span>7. Avg Pass Wt </span>
-			<Input type="number" placeholder="200" bind:value={inputs.avgPassWt} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.avgPassWt} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 		<div class="flex-1/2"></div>
 	</div>
 	<div class="flex w-full flex-row gap-4">
 		<Label class="flex flex-1/2 flex-col gap-2">
 			<span>8. # Pass </span>
-			<Input type="number" placeholder="1" bind:value={inputs.numPass} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={inputs.numPass} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 		<div class="flex-1/2"></div>
 	</div>
 	<div class="flex w-full flex-row gap-4">
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>9. ZFW (1 + 3 + 5)</span>
-			<Input type="number" bind:value={outputs.zfw} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={outputs.zfw} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 		<Label class="flex flex-1 flex-col gap-2">
 			<span>11. Takeoff Weight (10 - 4)</span>
-			<Input type="number" bind:value={outputs.takeoffWeight} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={outputs.takeoffWeight} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 	</div>
 	<div class="flex w-full flex-row gap-4">
 		<Label class="flex flex-1/2 flex-col gap-2">
 			<span>10. Gross Weight (2 + 9) </span>
-			<Input type="number" bind:value={outputs.grossWeight} />
+			<ButtonGroup class="w-full">
+				<Input type="number" bind:value={outputs.grossWeight} />
+				<InputAddon>lbs</InputAddon>
+			</ButtonGroup>
 		</Label>
 		<div class="flex-1/2"></div>
 	</div>
 	<Hr />
-	<div class="flex flex-row gap-4">
-		<div class="flex-4/5 space-y-6">
+	<div class="gap-4 md:flex md:flex-row md:flex-nowrap">
+		<div class="flex-1 space-y-6 md:flex-4/5">
 			<Label class="flex flex-row gap-2">
 				<span class="flex-1/4">Accelerate Stop Distance</span>
-				<Input type="number" bind:value={outputs.accelerateStop} />
+				<ButtonGroup class="w-full">
+					<Input type="number" bind:value={outputs.accelerateStop} />
+					<InputAddon>ft</InputAddon>
+				</ButtonGroup>
 			</Label>
 			<Label class="flex flex-row gap-2">
 				<span class="flex-1/4">Accelerate Go Distance</span>
-				<Input type="number" bind:value={outputs.accelerateGo} />
+				<ButtonGroup class="w-full">
+					<Input type="number" bind:value={outputs.accelerateGo} />
+					<InputAddon>ft</InputAddon>
+				</ButtonGroup>
 			</Label>
 			<div>
 				<Label class="flex flex-row gap-2">
 					<span class="flex-1/4">V1</span>
-					<Input type="number" bind:value={outputs.v1} />
+					<ButtonGroup class="w-full">
+						<Input type="number" bind:value={outputs.v1} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
 				</Label>
 			</div>
 			<Label class="flex flex-row gap-2">
 				<span class="flex-1/4">One Engine INOP Climb Rate</span>
-				<Input type="number" bind:value={outputs.oneEngineInopClimbRate} />
+				<ButtonGroup class="w-full">
+					<Input type="number" bind:value={outputs.oneEngineInopClimbRate} />
+					<InputAddon>ft/min</InputAddon>
+				</ButtonGroup>
 			</Label>
 			<Label class="flex flex-row gap-2">
 				<span class="flex-1/4">Landing Distance</span>
-				<Input type="number" bind:value={outputs.landingDistance} />
+				<ButtonGroup class="w-full">
+					<Input type="number" bind:value={outputs.landingDistance} />
+					<InputAddon>ft</InputAddon>
+				</ButtonGroup>
 			</Label>
 			<Hr />
-			<P>{metar}</P>
+			<P>{conditions.rawMetar}</P>
 		</div>
-		<div class="flex-1/5 space-y-2 border-l-1 border-gray-200 pl-4">
+		<div
+			class="flex-1 space-y-2 border-t-1 border-gray-200 pt-4 pl-4 md:flex-1/5 md:border-t-0 md:border-l-1"
+		>
 			<P class="text-center">Conditions</P>
 			<Label class="flex flex-col gap-2">
 				<span class="flex-1/4">Temp</span>
-				<Input type="number" bind:value={conditions.temperature} />
+				<ButtonGroup>
+					<Input type="number" bind:value={conditions.temperature} />
+					<InputAddon>°C</InputAddon>
+				</ButtonGroup>
 			</Label>
 			<Label class="flex flex-col gap-2">
 				<span class="flex-1/4">Elevation</span>
-				<Input type="number" bind:value={conditions.elevation} />
+				<ButtonGroup>
+					<Input type="number" bind:value={conditions.elevation} />
+					<InputAddon>ft</InputAddon>
+				</ButtonGroup>
 			</Label>
 			<Label class="flex flex-col gap-2">
 				<span class="flex-1/4">Weight</span>
-				<Input type="number" bind:value={outputs.takeoffWeight} />
+				<ButtonGroup>
+					<Input type="number" bind:value={outputs.takeoffWeight} />
+					<InputAddon>lbs</InputAddon>
+				</ButtonGroup>
 			</Label>
 			<Label class="flex flex-col gap-2">
 				<span class="flex-1/4">Slope</span>
-				<Input type="number" bind:value={conditions.slope} />
+				<ButtonGroup>
+					<Input type="number" bind:value={conditions.slope} />
+					<InputAddon>°</InputAddon>
+				</ButtonGroup>
 			</Label>
-			<div class="flex flex-row gap-2">
-				{#if conditions.runway}
-					<Label class="flex flex-1/2 flex-col gap-2">
-						<span class="flex-1/4">Runway</span>
-						<Input bind:value={conditions.runway.id} />
-					</Label>
-				{/if}
 
+			<div class="flex flex-row gap-2">
 				<Label class="flex flex-1/2 flex-col gap-2">
 					<span class="flex-1/4">HW/TW</span>
-					<Input type="number" bind:value={conditions.hwTw} />
+					<ButtonGroup>
+						<Input type="number" bind:value={conditions.hwTw} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
+				</Label>
+				<Label class="flex flex-1/2 flex-col gap-2">
+					<span class="flex-1/4">XW</span>
+					<ButtonGroup>
+						<Input type="number" bind:value={conditions.xw} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
+				</Label>
+			</div>
+			{#if conditions.runway}
+				<Label class="flex flex-1/2 flex-col gap-2">
+					<span class="flex-1/4">Runway</span>
+					<Select
+						size="md"
+						class="h-full"
+						bind:value={conditions.runway.ident}
+						items={runways
+							.map((rwy) => ({ value: rwy.he_ident, name: rwy.he_ident }))
+							.concat(runways.map((rwy) => ({ value: rwy.le_ident, name: rwy.le_ident })))}
+						onchange={() => {
+							//console.log('Runway changed:', conditions.runway?.ident);
+							const runway = runways.find(
+								(r) =>
+									r.he_ident === conditions.runway?.ident || r.le_ident === conditions.runway?.ident
+							);
+							//console.log('Selected runway:', runway);
+							if (runway) {
+								const end = [
+									{ ident: runway.le_ident, heading: runway.le_heading_degT },
+									{ ident: runway.he_ident, heading: runway.he_heading_degT }
+								].find((end) => end.ident === conditions.runway?.ident);
+
+								if (
+									end &&
+									end?.ident === conditions.runway?.ident &&
+									conditions.windDirection !== undefined &&
+									conditions.windSpeed !== undefined
+								) {
+									const { headwind, crosswind } = computeWindComponents(
+										end.heading,
+										conditions.windDirection,
+										conditions.windSpeed
+									);
+
+									conditions.runway = {
+										headwind,
+										crosswind,
+										length: runway.length_ft,
+										heading: end.heading,
+										ident: end.ident
+									};
+									conditions.hwTw = conditions.runway.headwind;
+									conditions.xw = conditions.runway.crosswind;
+								}
+							}
+						}}
+					/>
+				</Label>
+			{/if}
+			<div class="flex flex-row gap-2">
+				<Label class="flex flex-1/2 flex-col gap-2">
+					<span class="flex-1/4">Wind Direction</span>
+					<ButtonGroup>
+						<Input type="number" bind:value={conditions.windDirection} />
+						<InputAddon>°</InputAddon>
+					</ButtonGroup>
+				</Label>
+
+				<Label class="flex flex-1/2 flex-col gap-2">
+					<span class="flex-1/4">Wind Speed</span>
+					<ButtonGroup>
+						<Input type="number" bind:value={conditions.windSpeed} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
 				</Label>
 			</div>
 			<Label class="flex flex-col gap-2">
 				<span class="flex-1/4">Pressure Altitude</span>
-				<Input type="number" bind:value={conditions.pressureAlt} />
+				<ButtonGroup>
+					<Input type="number" bind:value={conditions.pressureAlt} />
+					<InputAddon>ft</InputAddon>
+				</ButtonGroup>
 			</Label>
 		</div>
 	</div>
@@ -498,7 +655,6 @@
 		</Label>
 		<Label class="flex flex-row gap-2">
 			<Toggle type="checkbox" bind:checked={settings.landingReverse} />
-
 			<span>Landing Reverse Thrust</span>
 		</Label>
 		<Label class="flex flex-col gap-2">
