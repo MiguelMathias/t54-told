@@ -349,7 +349,7 @@
 				<InfoCircleSolid class="h-5 w-5" />
 			</Button>
 		</div>
-		<div>
+		<div class="my-auto">
 			<ButtonGroup>
 				<InputAddon>K</InputAddon>
 				<Input
