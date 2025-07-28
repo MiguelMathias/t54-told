@@ -168,5 +168,5 @@ export const defaultSettings: Settings = {
 	landingReverse: false,
 	landingObstacle: 50,
 	landingFlaps: 'Approach',
-	usePressureAlt: true
+	usePressureAlt: false
 };
