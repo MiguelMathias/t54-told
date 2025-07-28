@@ -63,6 +63,8 @@
 		if (settings) {
 			localStorage.setItem('settings', JSON.stringify(settings));
 		}
+
+		inputs.passWt = (inputs.avgPassWt ?? 0) * (inputs.numPass ?? 0);
 	});
 
 	let outputs = $derived.by(() => {
