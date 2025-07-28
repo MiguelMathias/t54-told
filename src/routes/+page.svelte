@@ -305,7 +305,7 @@
 		const bestRunway = findBestRunwayForTakeoff(runways, windDirection, windSpeed);
 		conditions.runway = bestRunway ?? undefined;
 		conditions.hwTw = bestRunway?.headwind || undefined;
-		console.log(altimeter);
+
 		conditions.pressureAlt =
 			airport?.elevation_ft && altimeter
 				? (29.92 - altimeter) * 1000 + airport.elevation_ft
