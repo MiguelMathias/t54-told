@@ -314,21 +314,31 @@
 </script>
 
 <div class="space-y-6 p-8">
-	<div class="flex flex-row justify-between">
-		<div class="flex flex-row gap-4">
-			<Button color="primary" size="sm" onclick={() => (settingsOpen = true)}>
+	<div class="flex flex-row justify-between gap-4">
+		<div class="flex flex-row gap-2">
+			<Button
+				color="primary"
+				class="my-auto h-min p-2"
+				size="sm"
+				onclick={() => (settingsOpen = true)}
+			>
 				<AdjustmentsHorizontalSolid class="h-5 w-5" />
 			</Button>
 			<!-- <DarkMode /> -->
 			<Heading class="my-auto font-light" tag="h4">T-54 TOLD</Heading>
-			<Button color="alternative" size="sm" class="rounded-full" onclick={() => (infoOpen = true)}>
+			<Button
+				color="alternative"
+				size="sm"
+				class="my-auto h-min rounded-full p-2"
+				onclick={() => (infoOpen = true)}
+			>
 				<InfoCircleSolid class="h-5 w-5" />
 			</Button>
 		</div>
 		<div>
 			<ButtonGroup>
 				<InputAddon>K</InputAddon>
-				<Input placeholder="Enter ICAO" class="w-64" bind:value={icao} />
+				<Input placeholder="Enter ICAO" class="max-w-64" bind:value={icao} />
 				<Button color="primary" size="sm" onclick={fetchMetar}>METAR</Button>
 			</ButtonGroup>
 		</div>
