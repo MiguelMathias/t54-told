@@ -320,6 +320,7 @@
 			console.error(error);
 		}
 	};
+
 	$effect(() => {
 		icao;
 		updateConditions();
@@ -534,7 +535,7 @@
 
 			<div class="flex flex-row gap-2">
 				<Label class="flex flex-1/2 flex-col gap-2">
-					<span class="flex-1/4">HW/TW</span>
+					<span class="flex-1/4">HW</span>
 					<ButtonGroup>
 						<Input type="number" bind:value={conditions.hwTw} />
 						<InputAddon>kts</InputAddon>
