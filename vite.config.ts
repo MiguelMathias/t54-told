@@ -15,8 +15,11 @@ export default defineConfig({
 			registerType: 'autoUpdate',
 			includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
 			workbox: {
+				navigateFallback: '/',
+				navigateFallbackDenylist: [/^\/api\//], // Don't fallback for API calls
 				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024 // 100 MB
 			},
+			strategies: 'generateSW',
 			manifest: {
 				name: 'T-54 Takeoff and Landing Distance Calculator',
 				short_name: 'T-54 TOLD',
