@@ -14,6 +14,9 @@ export default defineConfig({
 		VitePWA({
 			registerType: 'autoUpdate',
 			includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
+			workbox: {
+				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024 // 100 MB
+			},
 			manifest: {
 				name: 'T-54 Takeoff and Landing Distance Calculator',
 				short_name: 'T-54 TOLD',
