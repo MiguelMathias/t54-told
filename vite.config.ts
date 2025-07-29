@@ -25,10 +25,9 @@ export default defineConfig({
 				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024
 			},
 			manifest: {
-				name: 'T-54 Takeoff and Landing Distance Calculator',
+				name: 'T-54 TOLD',
 				short_name: 'T-54 TOLD',
-				description:
-					'A web application for calculating takeoff and landing distances for the T-54 aircraft.',
+				description: 'T-54 Takeoff and Landing Distance Calculator',
 				theme_color: '#e7000b',
 				start_url: '/',
 				display: 'standalone',
