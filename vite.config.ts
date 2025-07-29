@@ -9,17 +9,21 @@ export default defineConfig({
 		port: 3000
 	},
 	plugins: [
-		sveltekit(),
-		tailwindcss(),
 		VitePWA({
 			registerType: 'autoUpdate',
+			strategies: 'generateSW',
+			injectRegister: 'auto',
 			includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
 			workbox: {
+				globPatterns: ['**/*.{js,css,ico,png,svg,json}'],
+				clientsClaim: true,
+				skipWaiting: true,
+				// SPA fallback
 				navigateFallback: '/',
-				navigateFallbackDenylist: [/^\/api\//], // Don't fallback for API calls
-				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024 // 100 MB
+				// Avoid fallback for API calls or assets
+				navigateFallbackDenylist: [/^\/api\//, /.*\.(?:png|jpg|jpeg|svg|webp)$/],
+				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024
 			},
-			strategies: 'generateSW',
 			manifest: {
 				name: 'T-54 Takeoff and Landing Distance Calculator',
 				short_name: 'T-54 TOLD',
@@ -47,15 +51,19 @@ export default defineConfig({
 						purpose: 'any maskable'
 					}
 				]
+			},
+			devOptions: {
+				enabled: true // So PWA works in `vite preview`
 			}
-		})
+		}),
+		sveltekit(),
+		tailwindcss()
 	],
 	test: {
 		workspace: [
 			{
 				extends: './vite.config.ts',
 				plugins: [svelteTesting()],
-
 				test: {
 					name: 'client',
 					environment: 'jsdom',
@@ -67,7 +75,6 @@ export default defineConfig({
 			},
 			{
 				extends: './vite.config.ts',
-
 				test: {
 					name: 'server',
 					environment: 'node',

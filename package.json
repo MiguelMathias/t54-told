@@ -75,6 +75,7 @@
 		]
 	},
 	"dependencies": {
+		"@sveltejs/adapter-static": "^3.0.8",
 		"@sveltejs/adapter-vercel": "^5.8.1",
 		"vite-plugin-pwa": "^1.0.2"
 	}
