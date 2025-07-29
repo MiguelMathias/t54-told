@@ -152,7 +152,7 @@ export const defaultConditions: Conditions = {
 };
 
 export type Settings = {
-	useNoWind: boolean;
+	useWind: boolean;
 	wetRunway: boolean;
 	takeoffFlaps: 'Up' | 'Approach';
 	landingReverse: boolean;
@@ -163,7 +163,7 @@ export type Settings = {
 };
 
 export const defaultSettings: Settings = {
-	useNoWind: true,
+	useWind: true,
 	wetRunway: false,
 	takeoffFlaps: 'Up',
 	landingReverse: false,

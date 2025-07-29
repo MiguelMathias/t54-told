@@ -166,7 +166,7 @@
 				pa,
 				takeoffWeight,
 				slope,
-				settings.useNoWind ? 0 : headwind,
+				!settings.useWind ? 0 : headwind,
 				v1VrRatio
 			) ?? undefined
 		);
@@ -191,7 +191,7 @@
 				pa,
 				takeoffWeight,
 				slope,
-				settings.useNoWind ? 0 : headwind,
+				!settings.useWind ? 0 : headwind,
 				v1VrRatio
 			) ?? undefined
 		);
@@ -229,7 +229,7 @@
 				pa,
 				settings.useRealWeightForLanding ? takeoffWeight : 12500,
 				slope ?? 0,
-				settings.useNoWind ? 0 : headwind,
+				!settings.useWind ? 0 : headwind,
 				obstacleHeight
 			) ?? undefined
 		);
@@ -253,7 +253,7 @@
 				pa,
 				takeoffWeight,
 				slope,
-				settings.useNoWind ? 0 : headwind,
+				!settings.useWind ? 0 : headwind,
 				1
 			) ?? 10000;
 
@@ -267,7 +267,7 @@
 						pa,
 						takeoffWeight,
 						slope,
-						settings.useNoWind ? 0 : headwind,
+						!settings.useWind ? 0 : headwind,
 						newV1Vr
 					) ?? 0;
 				if (newAccelerateStop < runway.length) {
@@ -284,7 +284,7 @@
 							pa,
 							takeoffWeight,
 							slope,
-							settings.useNoWind ? 0 : headwind,
+							!settings.useWind ? 0 : headwind,
 							newV1Vr
 						) ?? 0;
 				}
@@ -300,7 +300,7 @@
 						pa,
 						takeoffWeight,
 						slope,
-						settings.useNoWind ? 0 : headwind,
+						!settings.useWind ? 0 : headwind,
 						v1VrRatio
 					) ?? 0;
 			}
@@ -327,7 +327,7 @@
 				>
 					<AdjustmentsHorizontalSolid class="h-5 w-5" />
 				</Button>
-				<!-- <DarkMode /> -->
+				<DarkMode class="hidden" />
 				<Heading class="my-auto font-light" tag="h4">T-54 TOLD</Heading>
 				<Button
 					color="alternative"
@@ -628,7 +628,7 @@
 					<span class="flex-1/4">Wind Direction</span>
 					<ButtonGroup>
 						<Input type="number" bind:value={windDirection} max="360" min="1" step="10" />
-						<InputAddon>°</InputAddon>
+						<InputAddon>°T</InputAddon>
 					</ButtonGroup>
 				</Label>
 
@@ -667,8 +667,8 @@
 	<div class="space-y-6">
 		<div class="flex flex-row gap-4">
 			<Label class="flex flex-1 flex-row gap-2">
-				<Toggle type="checkbox" bind:checked={settings.useNoWind} class="form-checkbox" />
-				<span>No Wind</span>
+				<Toggle type="checkbox" bind:checked={settings.useWind} class="form-checkbox" />
+				<span>Wind</span>
 			</Label>
 			<Label class="flex flex-1 flex-row gap-2">
 				<Toggle type="checkbox" bind:checked={settings.wetRunway} class="form-checkbox" />
@@ -702,7 +702,7 @@
 							temperature,
 							pa,
 							takeoffWeight,
-							settings.useNoWind ? 0 : headwind,
+							!settings.useWind ? 0 : headwind,
 							slope,
 							v1VrRatio
 						) ?? undefined;
