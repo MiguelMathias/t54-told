@@ -163,7 +163,7 @@ export type Settings = {
 };
 
 export const defaultSettings: Settings = {
-	useWind: true,
+	useWind: false,
 	wetRunway: false,
 	takeoffFlaps: 'Up',
 	landingReverse: false,
