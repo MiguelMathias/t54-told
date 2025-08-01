@@ -15,14 +15,27 @@ export default defineConfig({
 			injectRegister: 'auto',
 			includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
 			workbox: {
-				globPatterns: ['**/*.{js,css,ico,png,svg,json}'],
+				globPatterns: ['**/*.{js,,css,ico,png,svg,json}'],
 				clientsClaim: true,
 				skipWaiting: true,
 				// SPA fallback
 				navigateFallback: '/',
 				// Avoid fallback for API calls or assets
 				navigateFallbackDenylist: [/^\/api\//, /.*\.(?:png|jpg|jpeg|svg|webp)$/],
-				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024
+				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024,
+				runtimeCaching: [
+					{
+						urlPattern: /^\/api\/metar/,
+						handler: 'NetworkFirst',
+						options: {
+							cacheName: 'metar-cache',
+							expiration: {
+								maxEntries: 100,
+								maxAgeSeconds: 60 * 60 * 60
+							}
+						}
+					}
+				]
 			},
 			manifest: {
 				name: 'T-54 TOLD',

@@ -509,7 +509,7 @@
 				</ButtonGroup>
 			</Label>
 			<Hr />
-			<P>{rawMetar}</P>
+			<P class="mb-8">{rawMetar}</P>
 		</div>
 		<div
 			class="flex-1 space-y-2 border-t-1 border-gray-200 pt-4 pl-4 md:flex-1/5 md:border-t-0 md:border-l-1 md:pt-0 dark:border-gray-700"
