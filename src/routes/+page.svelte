@@ -32,6 +32,7 @@
 		Select,
 		Toggle
 	} from 'flowbite-svelte';
+	import { onMount } from 'svelte';
 	import { AdjustmentsHorizontalSolid, InfoCircleSolid } from 'flowbite-svelte-icons';
 
 	let inputs = $state({ ...defaultInputs });
@@ -85,7 +86,7 @@
 			const { headwind } = computeWindComponents(runway.heading, windDirection, windSpeed);
 			return headwind;
 		}
-		return undefined;
+		return 0;
 	});
 	let crosswind = $derived.by(() => {
 		rawMetar;
@@ -93,7 +94,7 @@
 			const { crosswind } = computeWindComponents(runway.heading, windDirection, windSpeed);
 			return crosswind;
 		}
-		return undefined;
+		return 0;
 	});
 
 	const storedSettingsJSON = browser ? localStorage.getItem('settings') : undefined;
@@ -101,6 +102,10 @@
 	let settings = $state(
 		storedSettingsJSON ? JSON.parse(storedSettingsJSON) : defaultSettings
 	) as Settings;
+
+	onMount(() => {
+		fetchMetar();
+	});
 
 	const fetchMetar = async (..._args: any[]) => {
 		try {
@@ -110,19 +115,19 @@
 				return;
 			}
 
-			const response = await fetch(`/api/metar`, {
-				method: 'POST',
-				body: JSON.stringify({ icao: airport.icao_code }),
+			const response = await fetch(
+				`/api/metar/${airport.icao_code}` /* {
 				headers: {
-					'Content-Type': 'application/json'
+					'Cache-Control': 'public, max-age=3600'
 				}
-			});
+			} */
+			);
 			if (response.ok) {
 				const { metar } = await response.json();
 
 				rawMetar = metar;
 			}
-			//console.log(`Fetched METAR for ${icao}:`, rawMetar);
+			//console.log(`Fetched METAR for ${icao}:`, rawMetar, response.status);
 		} catch (error) {
 			console.error(`Error fetching METAR for ${airport?.icao_code}:`, error);
 		}

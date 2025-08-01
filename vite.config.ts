@@ -9,34 +9,64 @@ export default defineConfig({
 		port: 3000
 	},
 	plugins: [
+		sveltekit(),
+		tailwindcss(),
 		VitePWA({
 			registerType: 'autoUpdate',
 			strategies: 'generateSW',
-			injectRegister: 'auto',
+			injectRegister: null,
 			includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
 			workbox: {
-				globPatterns: ['**/*.{js,,css,ico,html,png,svg,json}'],
+				globPatterns: ['**/*.{js,css,ico,html,png,svg,json}'],
 				clientsClaim: true,
 				skipWaiting: true,
 				// Force precache `/` (index.html)
 				additionalManifestEntries: [
-					{ url: '/', revision: null } // null => auto-generated revision by workbox
+					{ url: '/', revision: Date.now().toString() }, // forces a revision
+					{ url: '/index.html', revision: Date.now().toString() }
 				],
 				// SPA fallback
-				navigateFallback: '/',
+				navigateFallback: '/index.html',
 				// Avoid fallback for API calls or assets
 				navigateFallbackDenylist: [/^\/api\//, /.*\.(?:png|jpg|jpeg|svg|webp)$/],
 				maximumFileSizeToCacheInBytes: 100 * 1024 * 1024,
 				runtimeCaching: [
 					{
-						urlPattern: /^\/api\/metar/,
+						urlPattern: ({ url }) => {
+							return url.pathname.startsWith('/api/metar');
+						},
 						handler: 'NetworkFirst',
 						options: {
 							cacheName: 'metar-cache',
 							expiration: {
 								maxEntries: 100,
 								maxAgeSeconds: 60 * 60
+							},
+							cacheableResponse: {
+								statuses: [0, 200] // Cache opaque (cross-origin) and successful responses
 							}
+							/* plugins: [
+								{
+									fetchDidSucceed: async ({ request, response }) => {
+										console.log(
+											'[Service Worker] Fetch Succeeded:',
+											`URL: ${request.url}`,
+											`Status: ${response.status}`
+										);
+										return response; // Must return the response
+									},
+									cacheDidUpdate: async ({ cacheName, request }) => {
+										console.log(
+											'[Service Worker] Cache Updated:',
+											`Cache: ${cacheName}`,
+											`URL: ${request.url}`
+										);
+									},
+									fetchDidFail: async ({ request }) => {
+										console.log(`[Service Worker] Fetch Failed: ${request.url}`);
+									}
+								}
+							] */
 						}
 					},
 					{
@@ -53,7 +83,9 @@ export default defineConfig({
 							}
 						}
 					}
-				]
+				],
+				// Pre-warm cache
+				cleanupOutdatedCaches: true
 			},
 			manifest: {
 				name: 'T-54 TOLD',
@@ -61,6 +93,7 @@ export default defineConfig({
 				description: 'T-54 Takeoff and Landing Distance Calculator',
 				theme_color: '#e7000b',
 				start_url: '/',
+				scope: '/',
 				display: 'standalone',
 				background_color: '#e7000b',
 				icons: [
@@ -85,9 +118,7 @@ export default defineConfig({
 			devOptions: {
 				enabled: true // So PWA works in `vite preview`
 			}
-		}),
-		sveltekit(),
-		tailwindcss()
+		})
 	],
 	test: {
 		workspace: [
