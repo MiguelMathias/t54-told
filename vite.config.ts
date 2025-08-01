@@ -15,9 +15,13 @@ export default defineConfig({
 			injectRegister: 'auto',
 			includeAssets: ['favicon.svg', 'robots.txt', 'apple-touch-icon.png'],
 			workbox: {
-				globPatterns: ['**/*.{js,,css,ico,png,svg,json}'],
+				globPatterns: ['**/*.{js,,css,ico,html,png,svg,json}'],
 				clientsClaim: true,
 				skipWaiting: true,
+				// Force precache `/` (index.html)
+				additionalManifestEntries: [
+					{ url: '/', revision: null } // null => auto-generated revision by workbox
+				],
 				// SPA fallback
 				navigateFallback: '/',
 				// Avoid fallback for API calls or assets
@@ -31,7 +35,21 @@ export default defineConfig({
 							cacheName: 'metar-cache',
 							expiration: {
 								maxEntries: 100,
-								maxAgeSeconds: 60 * 60 * 60
+								maxAgeSeconds: 60 * 60
+							}
+						}
+					},
+					{
+						urlPattern: ({ request }) =>
+							request.destination === 'document' ||
+							request.destination === 'script' ||
+							request.destination === 'style',
+						handler: 'StaleWhileRevalidate',
+						options: {
+							cacheName: 'app-shell',
+							expiration: {
+								maxEntries: 50,
+								maxAgeSeconds: 60 * 60 * 24 // 1 day
 							}
 						}
 					}
