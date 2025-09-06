@@ -2651,6 +2651,58 @@ export const climbOneEngineInop = (oat: number, pa: number, weight: number) => {
 	return computer([pointsStep1, pointsStep2], oat, pa, weight);
 };
 
+export const stallSpeeds = (flaps: 'Up' | 'Approach' | 'Down', weight: number, aob: number) => {
+	if (weight > 126000 || weight < 9000) return undefined;
+
+	const step1 = (weight: number) =>
+		flaps === 'Down'
+			? 0.0019444444 * weight + 55.50000056
+			: flaps === 'Approach'
+				? 0.0034722222 * weight + 40.75000028
+				: 0.0038194444 * weight + 44.12500056;
+
+	const pointsStep2 = [
+		{ x: 0, y: 55, z: 55 },
+		{ x: 30, y: 55, z: 59 },
+		{ x: 45, y: 55, z: 65.5 },
+		{ x: 60, y: 55, z: 78 },
+		{ x: 0, y: 60, z: 60 },
+		{ x: 30, y: 60, z: 64.5 },
+		{ x: 45, y: 60, z: 71.5 },
+		{ x: 60, y: 60, z: 85 },
+		{ x: 0, y: 65, z: 65 },
+		{ x: 30, y: 65, z: 70 },
+		{ x: 45, y: 65, z: 77.5 },
+		{ x: 60, y: 65, z: 92 },
+		{ x: 0, y: 70, z: 70 },
+		{ x: 30, y: 70, z: 75.5 },
+		{ x: 45, y: 70, z: 83.5 },
+		{ x: 60, y: 70, z: 99 },
+		{ x: 0, y: 75, z: 75 },
+		{ x: 30, y: 75, z: 81 },
+		{ x: 45, y: 75, z: 89 },
+		{ x: 60, y: 75, z: 106 },
+		{ x: 0, y: 80, z: 80 },
+		{ x: 30, y: 80, z: 86 },
+		{ x: 45, y: 80, z: 95 },
+		{ x: 60, y: 80, z: 102.5 },
+		{ x: 0, y: 85, z: 85 },
+		{ x: 30, y: 85, z: 91 },
+		{ x: 45, y: 85, z: 101 },
+		{ x: 60, y: 85, z: 120 },
+		{ x: 0, y: 90, z: 90 },
+		{ x: 30, y: 90, z: 96.5 },
+		{ x: 45, y: 90, z: 107 },
+		{ x: 60, y: 90, z: 127 },
+		{ x: 0, y: 95, z: 95 },
+		{ x: 30, y: 95, z: 102 },
+		{ x: 45, y: 95, z: 113 },
+		{ x: 58, y: 95, z: 130 }
+	];
+
+	return computer([pointsStep2], aob, step1(weight));
+};
+
 //console.log(computeWindComponents(132, 312, 20))
 export const getAccelStopComputer = (settings: Settings) => {
 	switch (settings.takeoffFlaps) {

@@ -158,6 +158,7 @@ export type Settings = {
 	landingReverse: boolean;
 	landingObstacle?: number;
 	useRealWeightForLanding: boolean;
+	useRealWeightForStalls: boolean;
 	landingFlaps: 'Up' | 'Approach' | 'Down';
 	usePressureAlt: boolean;
 };
@@ -169,6 +170,7 @@ export const defaultSettings: Settings = {
 	landingReverse: false,
 	landingObstacle: 50,
 	useRealWeightForLanding: false,
+	useRealWeightForStalls: false,
 	landingFlaps: 'Approach',
 	usePressureAlt: false
 };

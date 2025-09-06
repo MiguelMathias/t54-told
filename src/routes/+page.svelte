@@ -5,7 +5,8 @@
 		computeWindComponents,
 		getAccelGoComputer,
 		getAccelStopComputer,
-		getLandingComputer
+		getLandingComputer,
+		stallSpeeds
 	} from '$lib/computer';
 	import {
 		defaultInputs,
@@ -32,8 +33,8 @@
 		Select,
 		Toggle
 	} from 'flowbite-svelte';
-	import { onMount } from 'svelte';
 	import { AdjustmentsHorizontalSolid, InfoCircleSolid } from 'flowbite-svelte-icons';
+	import { onMount } from 'svelte';
 
 	let inputs = $state({ ...defaultInputs });
 
@@ -239,6 +240,28 @@
 			) ?? undefined
 		);
 	});
+	let stallSpeedFlapsUp0AOB: number | undefined = $derived.by(
+		() => stallSpeeds('Up', settings.useRealWeightForStalls ? takeoffWeight : 12500, 0) ?? undefined
+	);
+	let stallSpeedFlapsAppr0AOB: number | undefined = $derived.by(
+		() =>
+			stallSpeeds('Approach', settings.useRealWeightForStalls ? takeoffWeight : 12500, 0) ??
+			undefined
+	);
+	let stallSpeedFlapsAppr30AOB: number | undefined = $derived.by(() => {
+		return (
+			stallSpeeds('Approach', settings.useRealWeightForStalls ? takeoffWeight : 12500, 30) ??
+			undefined
+		);
+	});
+	let stallSpeedFlapsDown0AOB: number | undefined = $derived.by(
+		() =>
+			stallSpeeds('Down', settings.useRealWeightForStalls ? takeoffWeight : 12500, 0) ?? undefined
+	);
+	let stallSpeedFlapsDown30AOB: number | undefined = $derived.by(
+		() =>
+			stallSpeeds('Down', settings.useRealWeightForStalls ? takeoffWeight : 12500, 30) ?? undefined
+	);
 
 	const recalculateRatio = (..._args: any[]) => {
 		if (
@@ -453,8 +476,8 @@
 		<div class="flex-1/2"></div>
 	</div>
 	<Hr />
-	<div class="gap-4 md:flex md:flex-row md:flex-nowrap">
-		<div class="flex-1 space-y-6 md:flex-4/5">
+	<div class="gap-4 lg:flex lg:flex-row lg:flex-nowrap">
+		<div class="flex-1 space-y-6 lg:flex-4/5">
 			<Label class="flex flex-row gap-2">
 				<span class="flex-1/4">Accelerate Stop Distance - Flaps {settings.takeoffFlaps}</span>
 				<ButtonGroup class="w-full">
@@ -514,10 +537,70 @@
 				</ButtonGroup>
 			</Label>
 			<Hr />
+			<Label class="flex flex-row gap-2">
+				<span class="flex-1/4">
+					Stall Speed - Flaps Up - 0° AOB - {!settings.useRealWeightForStalls
+						? '12.5k'
+						: `${((takeoffWeight ?? 0) / 1000).toFixed(1)}k`}
+				</span>
+				<ButtonGroup class="w-full">
+					<Input type="number" bind:value={stallSpeedFlapsUp0AOB} />
+					<InputAddon>kts</InputAddon>
+				</ButtonGroup>
+			</Label>
+			<div class="flex w-full flex-row flex-wrap gap-4">
+				<Label class="flex w-full flex-row gap-2 lg:flex-1">
+					<span class="flex-1/4">
+						Stall Speed - Flaps Approach - 0° AOB - {!settings.useRealWeightForStalls
+							? '12.5k'
+							: `${((takeoffWeight ?? 0) / 1000).toFixed(1)}k`}
+					</span>
+					<ButtonGroup class="w-full">
+						<Input type="number" bind:value={stallSpeedFlapsAppr0AOB} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
+				</Label>
+				<Label class="flex w-full flex-row gap-2 lg:flex-1">
+					<span class="flex-1/4">
+						Stall Speed - Flaps Approach - 30° AOB - {!settings.useRealWeightForStalls
+							? '12.5k'
+							: `${((takeoffWeight ?? 0) / 1000).toFixed(1)}k`}
+					</span>
+					<ButtonGroup class="w-full">
+						<Input type="number" bind:value={stallSpeedFlapsAppr30AOB} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
+				</Label>
+			</div>
+			<div class="flex w-full flex-row flex-wrap gap-4">
+				<Label class="flex w-full flex-row gap-2 lg:flex-1">
+					<span class="flex-1/4">
+						Stall Speed - Flaps Down - 0° AOB - {!settings.useRealWeightForStalls
+							? '12.5k'
+							: `${((takeoffWeight ?? 0) / 1000).toFixed(1)}k`}
+					</span>
+					<ButtonGroup class="w-full">
+						<Input type="number" bind:value={stallSpeedFlapsDown0AOB} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
+				</Label>
+				<Label class="flex w-full flex-row gap-2 lg:flex-1">
+					<span class="flex-1/4">
+						Stall Speed - Flaps Down - 30° AOB - {!settings.useRealWeightForStalls
+							? '12.5k'
+							: `${((takeoffWeight ?? 0) / 1000).toFixed(1)}k`}
+					</span>
+					<ButtonGroup class="w-full">
+						<Input type="number" bind:value={stallSpeedFlapsDown30AOB} />
+						<InputAddon>kts</InputAddon>
+					</ButtonGroup>
+				</Label>
+			</div>
+			<Hr />
 			<P class="mb-8">{rawMetar}</P>
 		</div>
 		<div
-			class="flex-1 space-y-2 border-t-1 border-gray-200 pt-4 pl-4 md:flex-1/5 md:border-t-0 md:border-l-1 md:pt-0 dark:border-gray-700"
+			class="flex-1 space-y-2 border-t-1 border-gray-200 pt-4 pl-4 lg:flex-1/5 lg:border-t-0 lg:border-l-1 lg:pt-0 dark:border-gray-700"
 		>
 			<P class="text-center">Conditions</P>
 			<Label class="flex flex-col gap-2">
@@ -736,6 +819,10 @@
 				<span>Takeoff Weight for Landing</span>
 			</Label>
 		</div>
+		<Label class="flex flex-1 flex-row gap-2">
+			<Toggle type="checkbox" bind:checked={settings.useRealWeightForStalls} />
+			<span>Takeoff Weight for Stalls</span>
+		</Label>
 		<div class="flex flex-row gap-4">
 			<Label class="flex flex-1 flex-col gap-2">
 				<span>Landing Obstacle</span>

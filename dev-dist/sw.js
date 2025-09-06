@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-b49cbce6'], (function (workbox) { 'use strict';
+define(['./workbox-418c2b01'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -79,18 +79,24 @@ define(['./workbox-b49cbce6'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "/index.html",
-    "revision": "0.h4a8c8ebak8"
+    "revision": "0.v769fjeg70o"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/],
     denylist: [/^\/api\//, /.*\.(?:png|jpg|jpeg|svg|webp)$/]
   }));
-  workbox.registerRoute(/^\/api\/metar/, new workbox.NetworkFirst({
+  workbox.registerRoute(({
+    url
+  }) => {
+    return url.pathname.startsWith("/api/metar");
+  }, new workbox.NetworkFirst({
     "cacheName": "metar-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 100,
       maxAgeSeconds: 3600
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
     })]
   }), 'GET');
   workbox.registerRoute(({
