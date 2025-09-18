@@ -174,3 +174,31 @@ export const defaultSettings: Settings = {
 	landingFlaps: 'Approach',
 	usePressureAlt: false
 };
+
+export type MetarResponse = {
+	icaoId: string;
+	receiptTime: string; // ISO timestamp
+	obsTime: number; // epoch seconds
+	reportTime: string; // ISO timestamp
+	temp: number;
+	dewp: number;
+	wdir: number;
+	wspd: number;
+	visib: string;
+	altim: number;
+	slp: number;
+	qcField: number;
+	metarType: string;
+	rawOb: string;
+	lat: number;
+	lon: number;
+	elev: number;
+	name: string;
+	cover: string;
+	clouds: {
+		cover: string;
+		base: number;
+	}[];
+	fltCat: string;
+	rawTaf: string;
+};

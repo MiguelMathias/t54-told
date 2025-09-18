@@ -1,3 +1,4 @@
+import type { MetarResponse } from '$lib/types.js';
 import { json } from '@sveltejs/kit';
 
 export const GET = async ({ params, setHeaders }) => {
@@ -9,9 +10,9 @@ export const GET = async ({ params, setHeaders }) => {
 
 	try {
 		const response = await fetch(
-			`https://www.aviationweather.gov/cgi-bin/data/metar.php?ids=K${icao}`
+			`https://www.aviationweather.gov/api/data/metar?ids=K${icao}&format=json&taf=true`
 		);
-		const data = await response.text();
+		const data = (await response.json()) as MetarResponse[];
 
 		// Set the caching policy for this API response
 		// This tells browsers/caches to store this response for 1 hour (3600 seconds)
@@ -20,8 +21,7 @@ export const GET = async ({ params, setHeaders }) => {
 		});
 
 		return json({
-			metar: data,
-			icao: `K${icao}`
+			metar: data.at(0)
 		});
 	} catch (error) {
 		console.error('Error fetching METAR:', error);

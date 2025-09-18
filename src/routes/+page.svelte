@@ -16,6 +16,7 @@
 		findRunwaysByICAO,
 		type Airport,
 		type BestRunway,
+		type MetarResponse,
 		type Runway,
 		type Settings
 	} from '$lib/types';
@@ -36,8 +37,6 @@
 	import { AdjustmentsHorizontalSolid, InfoCircleSolid } from 'flowbite-svelte-icons';
 	import { onMount } from 'svelte';
 
-	let inputs = $state({ ...defaultInputs });
-
 	let icao = $state('NGP');
 
 	let airport: Airport | undefined = $derived.by(() => {
@@ -50,30 +49,14 @@
 	let elevation: number | undefined = $derived(airport?.elevation_ft);
 	let slope: number | undefined = $state(0);
 
-	let rawMetar = $state<string | undefined>(undefined);
-	let altimeter: number | undefined = $derived.by(() => {
-		const altimeterMatch = rawMetar?.match(/A(\d{4})/);
-		return altimeterMatch ? parseInt(altimeterMatch[1]) / 100 : undefined;
-	});
+	let metar = $state<MetarResponse | undefined>(undefined);
+	let altimeter: number | undefined = $derived(metar?.altim);
 	let pressureAlt: number | undefined = $derived.by(() =>
 		elevation && altimeter ? (29.92 - altimeter) * 1000 + elevation : undefined
 	);
-	let temperature: number | undefined = $derived.by(() => {
-		const tempMatch = rawMetar?.match(/M?(\d{2})\/M?(\d{2})/);
-		return tempMatch
-			? tempMatch[1].startsWith('M')
-				? -parseInt(tempMatch[1].slice(1))
-				: parseInt(tempMatch[1])
-			: undefined;
-	});
-	let windDirection: number | undefined = $derived.by(() => {
-		const windMatch = rawMetar?.match(/(\d{3})(\d{2,3})(G\d{2,3})?KT/);
-		return windMatch ? parseInt(windMatch[1]) : undefined;
-	});
-	let windSpeed: number | undefined = $derived.by(() => {
-		const windMatch = rawMetar?.match(/(\d{3})(\d{2,3})(G\d{2,3})?KT/);
-		return windMatch ? parseInt(windMatch[2]) : undefined;
-	});
+	let temperature: number | undefined = $derived(metar?.temp);
+	let windDirection: number | undefined = $derived(metar?.wdir);
+	let windSpeed: number | undefined = $derived(metar?.wspd);
 	let runway: BestRunway | undefined = $derived.by(() => {
 		if (windDirection && windSpeed)
 			return findBestRunwayForTakeoff(runways, windDirection, windSpeed) ?? undefined;
@@ -82,7 +65,7 @@
 	});
 
 	let headwind = $derived.by(() => {
-		rawMetar;
+		metar;
 		if (runway && windDirection && windSpeed) {
 			const { headwind } = computeWindComponents(runway.heading, windDirection, windSpeed);
 			return headwind;
@@ -90,7 +73,7 @@
 		return 0;
 	});
 	let crosswind = $derived.by(() => {
-		rawMetar;
+		metar;
 		if (runway && windDirection && windSpeed) {
 			const { crosswind } = computeWindComponents(runway.heading, windDirection, windSpeed);
 			return crosswind;
@@ -99,10 +82,18 @@
 	});
 
 	const storedSettingsJSON = browser ? localStorage.getItem('settings') : undefined;
+	const storedInputsJSON = browser ? localStorage.getItem('inputs') : undefined;
 
 	let settings = $state(
 		storedSettingsJSON ? JSON.parse(storedSettingsJSON) : defaultSettings
 	) as Settings;
+	let inputs = $state(
+		storedInputsJSON ? JSON.parse(storedInputsJSON) : { ...defaultInputs }
+	) as typeof defaultInputs;
+
+	$effect(() => {
+		if (browser) localStorage.setItem('inputs', JSON.stringify(inputs));
+	});
 
 	onMount(() => {
 		fetchMetar();
@@ -112,7 +103,7 @@
 		try {
 			if (!airport) {
 				//console.warn(`Invalid ICAO code: ${icao}`);
-				rawMetar = undefined;
+				metar = undefined;
 				return;
 			}
 
@@ -124,9 +115,9 @@
 			} */
 			);
 			if (response.ok) {
-				const { metar } = await response.json();
+				const { metar: fetchedMetar } = await response.json();
 
-				rawMetar = metar;
+				metar = fetchedMetar;
 			}
 			//console.log(`Fetched METAR for ${icao}:`, rawMetar, response.status);
 		} catch (error) {
@@ -597,7 +588,8 @@
 				</Label>
 			</div>
 			<Hr />
-			<P class="mb-8">{rawMetar}</P>
+			<P class="mb-8">{metar?.rawOb}</P>
+			<P class="mb-8">{metar?.rawTaf}</P>
 		</div>
 		<div
 			class="flex-1 space-y-2 border-t-1 border-gray-200 pt-4 pl-4 lg:flex-1/5 lg:border-t-0 lg:border-l-1 lg:pt-0 dark:border-gray-700"
